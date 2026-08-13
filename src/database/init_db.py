@@ -4,6 +4,7 @@ def criar_tabela():
     conn = get_connetcion()
     cursor = conn.cursor()
 
+    #tabela de locais
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS locations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -15,5 +16,30 @@ def criar_tabela():
         )
   """ )
 
+
+    #tabela de configurações
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS settings(
+        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+        origem TEXT, 
+        destino TEXT, 
+        horario_chegada TEXT
+        )
+    """)
+
+
+    #tabela de histórico de trânsito
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS traffic_history(
+        id INTEGER PRIMARY KEY AUTOINCRMENT, 
+        data_hora TEXT,
+        origem TEXT,
+        destino TEXT,
+        distancia_km REAL,
+        tempo_minutos INTEGER 
+        )
+""")
     conn.commit()
     conn.close()
+
+

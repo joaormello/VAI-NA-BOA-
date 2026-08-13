@@ -45,3 +45,58 @@ def listar_locais():
     conn.close()
 
     return locais
+
+
+
+def buscar_local_por_apelido(apelido):
+    conn = get_connetcion()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM locations
+        WHERE apelido = ?
+""", (apelido,))
+
+    local = cursor.fetchone()
+    conn.close()
+    return local
+
+def atualizar_local(
+        apelido,
+        endereco_confirmado,
+        latitude,
+        longitude
+):
+    conn = get_connetcion()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE locations
+        SET endereco_confirmado = ?,
+            latitude = ?,
+            longitude = ?
+        WHERE apelido = ?
+""",
+(
+    endereco_confirmado,
+    latitude,
+    longitude,
+    apelido
+
+))
+    conn.commit()
+    conn.close()
+
+
+def excluir_local(apelido):
+    conn = get_connetcion()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM locations
+        WHERE apelido = ?
+""", (apelido,))
+
+    conn.commit()
+    conn.close()
