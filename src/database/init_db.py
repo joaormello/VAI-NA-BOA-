@@ -17,21 +17,11 @@ def criar_tabela():
   """ )
 
 
-    #tabela de configurações
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS settings(
-        id INTEGER PRIMARY KEY AUTOINCREMENT, 
-        origem TEXT, 
-        destino TEXT, 
-        horario_chegada TEXT
-        )
-    """)
-
 
     #tabela de histórico de trânsito
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS traffic_history(
-        id INTEGER PRIMARY KEY AUTOINCRMENT, 
+        id INTEGER PRIMARY KEY AUTOINCREMENT, 
         data_hora TEXT,
         origem TEXT,
         destino TEXT,
@@ -39,6 +29,15 @@ def criar_tabela():
         tempo_minutos INTEGER 
         )
 """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS settings(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        origem TEXT,
+        destino TEXT, 
+        horario_chegada TEXT
+        )
+    """)
     conn.commit()
     conn.close()
 

@@ -5,7 +5,7 @@ def salvar_configuracao(
         destino,
         horario_chegada
 ):
-    conn = get_connetcion
+    conn = get_connetcion()
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -24,4 +24,17 @@ def salvar_configuracao(
     conn.commit()
     conn.close()
 
-    
+
+def listar_configuracoes():
+    conn = get_connetcion()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT *
+        FROM settings
+    """)
+
+    configuracoes = cursor.fetchall()
+    conn.close()
+    return configuracoes
+
+
