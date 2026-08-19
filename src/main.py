@@ -1,3 +1,13 @@
-from analysis.historical_analysis import calcular_tempo_medio
+from analysis.traffic_analysis import (melhor_horario, pior_horario)
 
-print(calcular_tempo_medio())
+print()
+
+print(
+    f"Melhor horário: "
+    f"{melhor_horario()}:00"
+)
+
+print(
+    f"Pior horário: "
+    f"{pior_horario()}:00"
+)
