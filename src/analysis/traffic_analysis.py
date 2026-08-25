@@ -1,4 +1,5 @@
 from database.traffic_repository import listar_historico, listar_historico_rota
+from datetime import datetime, timedelta
 
 def contar_registros():
 
@@ -254,3 +255,35 @@ def comparar_com_media_rota(origem, destino, tempo_atual):
         )
 
     return "Trânsito dentro da média"
+
+
+
+def calcular_horario_saida(
+        origem,
+        destino,
+        horario_chegada
+):
+    tempo_medio = calcular_tempo_rota(origem, destino)
+
+    if tempo_medio == 0:
+        return None
+
+    chegada = datetime.strptime(horario_chegada, "%H:%M" )
+    saida = chegada - timedelta(minutes=tempo_medio)
+
+    return saida.strftime("%H:%M")
+
+
+def calcular_horario_saida_seguro(
+        origem, 
+        destino,
+        horario_chegada
+):
+    tempo_medio = calcular_tempo_rota(origem, destino)
+
+    margem = 10
+
+    chegada = datetime.strptime(horario_chegada, "%H:%M")
+    saida = chegada - timedelta(minutes=tempo_medio + margem)
+
+    return saida.strftime("%H:%M")
