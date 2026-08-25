@@ -7,6 +7,18 @@ def salvar_local(
         latitude,
         longitude,
 ):
+
+    existente = buscar_local_por_apelido(apelido)
+    if existente :
+        atualizar_local(
+            apelido,
+            endereco_confirmado,
+            latitude,
+            longitude
+        )
+        
+        return
+    
     conn = get_connetcion()
     cursor = conn.cursor()
 

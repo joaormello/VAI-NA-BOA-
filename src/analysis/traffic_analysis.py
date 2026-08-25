@@ -1,4 +1,4 @@
-from database.traffic_repository import listar_historico
+from database.traffic_repository import listar_historico, listar_historico_rota
 
 def contar_registros():
 
@@ -135,3 +135,122 @@ def pior_horario():
     )
 
     return pior
+
+
+
+def calcular_tempo_rota(origem, destino):
+    historico = listar_historico_rota(origem, destino)
+
+    if not historico:
+        return 0
+
+    soma = 0
+
+    for registro in historico:
+        soma += registro[5]
+
+    return round(soma/len(historico), 1)
+
+
+def melhor_tempo_rota(origem, destino):
+    historico = listar_historico_rota(origem, destino)
+
+    if not historico:
+        return 0 
+
+    tempos = []
+
+    for registro in historico:
+        tempos.append(registro[5])
+
+    return min(tempos)
+
+def pior_tempo_rota(origem, destino):
+    historico = listar_historico_rota(origem, destino)
+
+    if not historico :
+        return 0 
+
+    tempos = []
+    for registro in historico:
+
+        tempos.append(registro[5])
+
+    return max(tempos)
+
+
+def total_consultas_rota(origem, destino):
+
+    historico = listar_historico_rota(origem, destino)
+
+    return len(historico)
+
+def melhor_horario_rota(origem, destino):
+
+    medias = media_por_hora_rota(origem, destino)
+
+    if not medias:
+        return None
+
+    return min(medias, key=medias.get)
+
+
+def pior_horario_rota(origem, destino):
+    medias = media_por_hora_rota(origem, destino)
+
+    if not medias:
+        return None
+
+    return max(medias, key=medias.get)
+
+
+def media_por_hora_rota(origem, destino):
+    historico = listar_historico_rota(origem, destino)
+
+    horas = {}
+
+    for registro in historico :
+
+        data_hora = registro[1]
+        hora = data_hora[11:13]
+        tempo = registro[5]
+
+        if hora not in horas:
+            horas[hora] = []
+        horas[hora].append(tempo)
+
+    medias = {}
+
+    for hora in horas:
+        media = (sum(horas[hora]) / len(horas[hora]))
+
+        medias[hora] = round(media, 1)
+
+    return medias
+
+
+def comparar_com_media_rota(origem, destino, tempo_atual):
+    media = calcular_tempo_rota(origem, destino)
+
+    if media == 0:
+        return "Sem histórico sufuciente"
+
+    diferenca = (
+        (tempo_atual - media)/media
+    )*100
+
+    if diferenca > 0:
+        return(
+            f"⚠️ Trânsito "
+            f"{round(diferenca, 1)}% "
+            f"acima da média."
+        )
+
+    elif diferenca < 0:
+        return (
+            f"✅ Trânsito "
+            f"{abs(round(diferenca, 1))}% "
+            f"abaixo da média."
+        )
+
+    return "Trânsito dentro da média"

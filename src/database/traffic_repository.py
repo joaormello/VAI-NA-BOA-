@@ -47,3 +47,24 @@ def listar_historico():
     historico = cursor.fetchall()
     conn.close()
     return historico
+
+
+def listar_historico_rota(origem, destino):
+    conn = get_connetcion()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM traffic_history
+        WHERE origem = ?
+        AND destino = ?
+    """,
+    (
+        origem,
+        destino
+    ))
+
+    historico = cursor.fetchall()
+    conn.close()
+
+    return historico

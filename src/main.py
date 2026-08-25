@@ -1,13 +1,7 @@
-from analysis.traffic_analysis import (melhor_horario, pior_horario)
+from pipeline.route_pipeline import executar_pipeline
 
-print()
+origem = "casa"
+destino = "Avenida Nove de Julho, 3186 - Jardim Paulista, São Paulo"
 
-print(
-    f"Melhor horário: "
-    f"{melhor_horario()}:00"
-)
+print(executar_pipeline(origem, destino))
 
-print(
-    f"Pior horário: "
-    f"{pior_horario()}:00"
-)

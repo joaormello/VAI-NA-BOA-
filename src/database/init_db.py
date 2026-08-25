@@ -38,7 +38,18 @@ def criar_tabela():
         horario_chegada TEXT
         )
     """)
+
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS favorite_routes(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        origem TEXT NOT NULL,
+        destino TEXT NOT NULL, 
+        ativo INTEGER DEFAULT 1
+        )
+    """)
     conn.commit()
     conn.close()
 
 
+criar_tabela()

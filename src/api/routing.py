@@ -1,5 +1,10 @@
 import requests 
 from config.settings import TOMTOM_API_KEY
+import urllib3
+
+urllib3.disable_warnings(
+    urllib3.exceptions.InsecureRequestWarning
+)
 
 def calcular_rota(
         origem_lat, 
@@ -18,6 +23,6 @@ def calcular_rota(
         "key": TOMTOM_API_KEY
     }
 
-    response = requests.get(url, params=params, timeout=10)
+    response = requests.get(url, params=params, timeout=10, verify=False)
     response.raise_for_status()
     return response.json()
