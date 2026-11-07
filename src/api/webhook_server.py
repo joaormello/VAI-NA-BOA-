@@ -1,11 +1,12 @@
 """
 src/api/webhook_server.py
-Servidor FastAPI que recebe as mensagens do WhatsApp (Z-API / Evolution Webhook)
+Servidor FastAPI que recebe as mensagens do WhatsApp (Twilio Webhook / Z-API)
 e executa o Scheduler de segundo plano em conjunto.
 """
 import sys
 from pathlib import Path
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import PlainTextResponse
 import uvicorn
 
 BASE_SRC = Path(__file__).resolve().parents[1]
@@ -26,44 +27,58 @@ def startup_event():
 
 @app.get("/")
 def health_check():
-    return {"status": "online", "app": "Vai na Boa", "whatsapp": "Z-API conectado"}
+    return {"status": "online", "app": "Vai na Boa", "whatsapp": "Twilio / Z-API conectado"}
+
+
+@app.post("/webhook/twilio")
+async def webhook_twilio(request: Request):
+    """
+    Endpoint chamado pela Twilio sempre que voce envia uma mensagem para o Bot Oficial no WhatsApp.
+    Recebe os dados via form-urlencoded padrao da Twilio.
+    """
+    try:
+        form = await request.form()
+        remetente = form.get("From", "")  # Ex: whatsapp:+5511999999999
+        texto = form.get("Body", "").strip()
+
+        if not texto:
+            return PlainTextResponse("")
+
+        print(f"\n📩 [Mensagem Recebida via Twilio de {remetente}]: {texto}")
+
+        # Processa a resposta no cérebro do Vai na Boa
+        resposta = processar_mensagem_whatsapp(texto)
+
+        # Envia de volta para o seu WhatsApp atraves da Twilio
+        enviar_mensagem_whatsapp(resposta, numero=remetente)
+
+        return PlainTextResponse("")
+
+    except Exception as err:
+        print(f"❌ [Webhook Twilio] Erro: {err}")
+        return PlainTextResponse("")
 
 
 @app.post("/webhook/zapi")
 async def webhook_zapi(request: Request):
-    """
-    Endpoint chamado pela Z-API sempre que uma mensagem chega no WhatsApp.
-    """
     try:
         dados = await request.json()
-
-        # Ignora mensagens enviadas por você mesmo
         if dados.get("fromMe", False):
             return {"status": "ignorado", "motivo": "fromMe"}
 
         remetente = dados.get("phone", "")
-        # Extrai o texto da mensagem
         texto = dados.get("text", {}).get("message", "") or dados.get("message", "")
 
         if not texto.strip():
             return {"status": "ignorado", "motivo": "sem texto"}
 
-        print(f"\n📩 [Mensagem Recebida via Z-API de {remetente}]: {texto}")
-
-        # Processa a resposta no cérebro do Vai na Boa
         resposta = processar_mensagem_whatsapp(texto)
-
-        # Envia a resposta de volta para o seu WhatsApp
         enviar_mensagem_whatsapp(resposta, numero=remetente)
-
-        return {"status": "sucesso", "resposta_enviada": True}
-
+        return {"status": "sucesso"}
     except Exception as err:
-        print(f"❌ [Webhook Z-API] Erro: {err}")
         return {"status": "erro", "detalhes": str(err)}
 
 
-# Mantem compatibilidade com endpoint evolution
 @app.post("/webhook/evolution")
 async def webhook_evolution(request: Request):
     return await webhook_zapi(request)

@@ -1,7 +1,8 @@
 """
 src/whatsapp/evolution_client.py
-Cliente Unificado de envio de WhatsApp.
-Envia prioritariamente via Z-API se configurada, ou via Evolution API.
+Roteador unificado de envio de WhatsApp.
+Envia prioritariamente via Twilio Sandbox (numero independente) se configurado,
+ou via Z-API / Evolution.
 """
 import os
 import sys
@@ -12,11 +13,14 @@ if hasattr(sys.stdout, "reconfigure"):
 
 load_dotenv()
 
+from whatsapp.twilio_client import enviar_mensagem_whatsapp as enviar_twilio
 from whatsapp.zapi_client import enviar_mensagem_whatsapp as enviar_zapi
 
 
 def enviar_mensagem_whatsapp(texto: str, numero: str = None) -> bool:
     """
-    Roteador de envio: envia direto pela Z-API conectada.
+    Roteador de envio: usa Twilio se as credenciais existirem, senao Z-API.
     """
+    if os.getenv("TWILIO_ACCOUNT_SID") and os.getenv("TWILIO_AUTH_TOKEN"):
+        return enviar_twilio(texto, numero)
     return enviar_zapi(texto, numero)
