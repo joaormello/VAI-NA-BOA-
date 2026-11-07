@@ -9,19 +9,15 @@ def salvar_rota_favorita(origem, destino):
         FROM favorite_routes
         WHERE origem = ?
         AND destino = ?
-""",
-(
-    origem,
-    destino
-))
+    """, (origem, destino))
     rota_existente = cursor.fetchone()
 
     if rota_existente:
         print(
             f"⚠️ Rota {origem} -> {destino} já cadastrada."
         )
-
-    conn.close()
+        conn.close()
+        return
 
     cursor.execute("""
         INSERT INTO favorite_routes(
@@ -29,22 +25,16 @@ def salvar_rota_favorita(origem, destino):
             destino
         )
         VALUES (?, ?)
-    """,
-    (  
-        origem,
-        destino
-    ))
+    """, (origem, destino))
 
     conn.commit()
     conn.close()
 
     print(
         f"✅ Rota {origem} -> {destino} cadastrada."
-    ) 
-    
+    )
 
 
-                   
 def listar_rotas_favoritas():
     conn = get_connetcion()
     cursor = conn.cursor()
@@ -62,20 +52,17 @@ def listar_rotas_favoritas():
 
 
 def desativar_rotas(rota_id):
-
     conn = get_connetcion()
     cursor = conn.cursor()
 
     cursor.execute("""
-        UPDATE favorites_routes
+        UPDATE favorite_routes
         SET ativo = 0
         WHERE id = ?
-    """,
-    (rota_id))
+    """, (rota_id,))
 
     conn.commit()
     conn.close()
-
 
 
 def limpar_rotas_favoritas():
@@ -87,4 +74,3 @@ def limpar_rotas_favoritas():
 
     conn.commit()
     conn.close()
-    

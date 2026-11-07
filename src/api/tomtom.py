@@ -11,9 +11,9 @@ def buscar_local(endereco):
 
     parametros = {
         "key": TOMTOM_API_KEY,
-        "limit":1
+        "limit": 1
     }
 
-    resposta = requests.get(url, params=parametros, verify= False)
+    resposta = requests.get(url, params=parametros, timeout=8, verify=False)
     resposta.raise_for_status()
     return resposta.json()
