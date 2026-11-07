@@ -5,6 +5,7 @@ e responde tanto via TwiML nativo quanto via API de envio.
 """
 import sys
 from pathlib import Path
+from urllib.parse import parse_qs
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import PlainTextResponse
 import uvicorn
@@ -34,13 +35,15 @@ def health_check():
 async def webhook_twilio(request: Request):
     """
     Endpoint chamado pela Twilio ao receber mensagem no WhatsApp.
-    Responde diretamente via TwiML (resposta sincrona instantanea)
-    para nao depender de credenciais REST adicionais no envio!
+    Lê o body bruto com parse_qs para garantir compatibilidade sem depender de python-multipart.
     """
     try:
-        form = await request.form()
-        remetente = form.get("From", "")
-        texto = form.get("Body", "").strip()
+        body_bytes = await request.body()
+        body_str = body_bytes.decode("utf-8", errors="replace")
+        form_data = parse_qs(body_str)
+
+        remetente = form_data.get("From", [""])[0]
+        texto = form_data.get("Body", [""])[0].strip()
 
         print(f"\n📩 [Twilio Recebido de {remetente}]: {texto}")
 
@@ -51,8 +54,6 @@ async def webhook_twilio(request: Request):
         resposta = processar_mensagem_whatsapp(texto)
         print(f"🤖 [Resposta Gerada]:\n{resposta}")
 
-        # Responde com TwiML nativo do WhatsApp (metodo oficial e instantaneo da Twilio)
-        # Escapa caracteres XML basicos
         resposta_xml = (
             resposta.replace("&", "&amp;")
             .replace("<", "&lt;")
@@ -69,7 +70,7 @@ async def webhook_twilio(request: Request):
 
     except Exception as err:
         print(f"❌ [Webhook Twilio] Erro: {err}")
-        return PlainTextResponse("")
+        return PlainTextResponse(f"Erro interno: {err}", status_code=500)
 
 
 @app.post("/webhook/zapi")
