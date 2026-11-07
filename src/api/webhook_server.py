@@ -1,7 +1,7 @@
 """
 src/api/webhook_server.py
 Servidor FastAPI que recebe as mensagens do WhatsApp (Twilio Webhook / Z-API)
-e executa o Scheduler de segundo plano em conjunto.
+e responde tanto via TwiML nativo quanto via API de envio.
 """
 import sys
 from pathlib import Path
@@ -33,26 +33,39 @@ def health_check():
 @app.post("/webhook/twilio")
 async def webhook_twilio(request: Request):
     """
-    Endpoint chamado pela Twilio sempre que voce envia uma mensagem para o Bot Oficial no WhatsApp.
-    Recebe os dados via form-urlencoded padrao da Twilio.
+    Endpoint chamado pela Twilio ao receber mensagem no WhatsApp.
+    Responde diretamente via TwiML (resposta sincrona instantanea)
+    para nao depender de credenciais REST adicionais no envio!
     """
     try:
         form = await request.form()
-        remetente = form.get("From", "")  # Ex: whatsapp:+5511999999999
+        remetente = form.get("From", "")
         texto = form.get("Body", "").strip()
+
+        print(f"\n📩 [Twilio Recebido de {remetente}]: {texto}")
 
         if not texto:
             return PlainTextResponse("")
 
-        print(f"\n📩 [Mensagem Recebida via Twilio de {remetente}]: {texto}")
-
         # Processa a resposta no cérebro do Vai na Boa
         resposta = processar_mensagem_whatsapp(texto)
+        print(f"🤖 [Resposta Gerada]:\n{resposta}")
 
-        # Envia de volta para o seu WhatsApp atraves da Twilio
-        enviar_mensagem_whatsapp(resposta, numero=remetente)
+        # Responde com TwiML nativo do WhatsApp (metodo oficial e instantaneo da Twilio)
+        # Escapa caracteres XML basicos
+        resposta_xml = (
+            resposta.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+        )
 
-        return PlainTextResponse("")
+        twiml_response = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Message>{resposta_xml}</Message>
+</Response>"""
+
+        return Response(content=twiml_response, media_type="application/xml")
 
     except Exception as err:
         print(f"❌ [Webhook Twilio] Erro: {err}")
@@ -77,11 +90,6 @@ async def webhook_zapi(request: Request):
         return {"status": "sucesso"}
     except Exception as err:
         return {"status": "erro", "detalhes": str(err)}
-
-
-@app.post("/webhook/evolution")
-async def webhook_evolution(request: Request):
-    return await webhook_zapi(request)
 
 
 if __name__ == "__main__":
