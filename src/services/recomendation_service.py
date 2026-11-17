@@ -6,7 +6,7 @@ from analysis.traffic_analysis import (
 )
 from database.route_alternatives_repository import listar_alternativas_rota
 from database.location_repository import buscar_local_por_apelido
-from api.multimodal_provider import consultar_transporte_publico_google
+from api.google_routes_service import consultar_rotas_transporte_google
 
 
 def gerar_recomendacao_rota(origem, destino, tempo_atual):
@@ -43,8 +43,7 @@ def gerar_recomendacao_rota(origem, destino, tempo_atual):
 
 def recomendar_melhor_modal_e_rota(origem, destino, tempo_vias_atual=None):
     """
-    Avalia as opções de caminho/modal cadastradas para a rota (ex: Ônibus 746C-10 + 8605-10,
-    Metrô, Carro) + Google Transit API (se disponível) e pondera pelo trânsito atual nas ruas.
+    Avalia as opções de caminho/modal cadastradas para a rota + Google Routes API ao vivo.
     Se o trânsito de rua estiver pesado, recomenda automaticamente migrar para o Metrô!
     """
     media_vias = calcular_tempo_rota(origem, destino)
@@ -58,9 +57,6 @@ def recomendar_melhor_modal_e_rota(origem, destino, tempo_vias_atual=None):
 
     for alt in alternativas_db:
         sens = alt["sensibilidade_transito"]
-        # Se fator_transito_rua = 1.30 (+30% de trânsito):
-        # - Ônibus/Carro (sensibilidade 1.0) sofre +30% no tempo
-        # - Metrô (sensibilidade 0.15) sofre apenas +4.5% no tempo!
         multiplicador = 1.0 + ((fator_transito_rua - 1.0) * sens)
         tempo_ajustado = round(alt["tempo_base_min"] * multiplicador)
 
@@ -79,20 +75,20 @@ def recomendar_melhor_modal_e_rota(origem, destino, tempo_vias_atual=None):
             }
         )
 
-    # Se houver chave do Google Maps configurada, também consulta opções ao vivo da SPTrans/Metrô
+    # Consulta alternativas em tempo real diretamente na nova Google Routes API
     loc_orig = buscar_local_por_apelido(origem)
     loc_dest = buscar_local_por_apelido(destino)
     if loc_orig and loc_dest and loc_orig[4] and loc_dest[4]:
-        opcoes_google = consultar_transporte_publico_google(
+        opcoes_google = consultar_rotas_transporte_google(
             loc_orig[4], loc_orig[5], loc_dest[4], loc_dest[5]
         )
-        for og in opcoes_google:
+        for og in opcoes_google[:3]:  # Top 3 rotas mais rápidas do Google
             icone = "🚇" if "METRO" in og["modal"] else "🚌"
             opcoes_calculadas.append(
                 {
                     "modal": og["modal"],
                     "icone": icone,
-                    "descricao": f"{og['descricao_percurso']} (Google Live)",
+                    "descricao": og["descricao_percurso"],
                     "tempo_base_min": og["tempo_estimado_min"],
                     "tempo_estimado_hoje_min": og["tempo_estimado_min"],
                     "preferencial": False,
@@ -110,7 +106,7 @@ def recomendar_melhor_modal_e_rota(origem, destino, tempo_vias_atual=None):
     melhor = opcoes_ordenadas[0]
 
     linhas = ["🧭 *OPÇÕES DE CAMINHO E MODAL HOJE:*"]
-    for op in opcoes_ordenadas:
+    for op in opcoes_ordenadas[:4]:
         destaque = " ⭐ *(Mais rápido)*" if op is melhor else ""
         linhas.append(
             f"  {op['icone']} *{op['descricao']}*: ~*{op['tempo_estimado_hoje_min']} min*{destaque}"
